@@ -5,7 +5,7 @@
 如果我要部署自己的博客，一般需要以下几步：
 
 1. 使用 webpack 编译代码，产出静态资源
-2. 打开 FTP 软件，上传替换文件
+2. 打开 FTP 软件，上传服务器替换文件
 3. 看看网站是否在线上工作正常
 4. 将本地代码提交
 
@@ -13,14 +13,22 @@
 随之而来的问题：
 
 1. 手动部署成本太高
-2. 需要手动维护环境
-3. 难以排查线上问题
+2. 本地和线上环境可能会不一致
+3. 遇到线上问题难以排查
+
+
+该怎么解决这些问题呢？
 
 
 
 ## 虚拟机
 
-一般是通过某种软件来实现，仿真出一台或者多台计算机的各种硬件，这就是虚拟机。
+
+虚拟机一般是通过某种软件来实现的。
+
+通过硬件虚拟化的功能，可以模拟出一台或者多台计算机的各种硬件。
+
+在上面安装一个新的操作系统，即 Guest OS。
 
 用户可以在这一台虚拟机上安装、运行操作系统和各种应用，解决了环境不一致的问题。
 
@@ -36,6 +44,7 @@
 
 
 ## Docker
+
 
 在一艘大船上，可以把货物放到集装箱中，集装箱彼此之间不会互相影响。
 
@@ -62,10 +71,29 @@ Docker 技术的三大核心概念，分别是：
 3. 仓库（Repository）
 
 
-## 镜像
+![docker](../assets/images/docker.png)
 
 
-## 容器
+一个 Dockerfile 文件：
+
+```
+FROM nginx
+
+COPY ./index.html /usr/share/nginx/html/index.html
+
+EXPOSE 80
+```
+
+
+一个完整的 Docker 运行：
+
+```
+docker image build ./ -t my-docker:1.0.0 # 打包镜像
+
+docker container create -p 8080:80 my-docker:1.0.0 # 创建容器
+
+docker container start xxx # xxx 为上条命令运行的结果
+```
 
 
 
@@ -109,13 +137,25 @@ Docker 技术的三大核心概念，分别是：
 ![image](../assets/images/CI.jpg)
 
 
+引入 CI/CD 以后，整个流程变成：
+
+1. 本地机器上写代码
+2. 提交代码，push 到 git 远程仓库
+3. git hook 触发 jenkins 的构建 job （自动）
+4. jenkins job 中拉取项目代码，运行 npm run build，如果失败，发送邮件通知相关人。（自动）
+5. jenkins job 中执行测试服务器的部署脚本 （自动）
+
+
 
 ## Webhook
 
 > Events are at the core of webhooks. These webhooks fire whenever a certain action is taken on the repository, which your server's payload URL intercepts and acts upon.
 
 
+CI/CD 的关键在于自动化，使用脚本来自动化构建、部署，而 Webhook 则起到了中间桥梁的作用。
+
 Webhook 简单来说就是一种反向 API 机制，是在特定情况下触发的一种 API，类似于触发器。
+
 
 ![Webhook](../assets/images/webhook.png)
 
@@ -132,15 +172,14 @@ Travis CI 提供的是持续集成服务（Continuous Integration，简称 CI）
 
 它绑定 Github 上面的项目，只要有新的代码，就会自动抓取。
 
-然后，提供一个运行环境，执行测试，完成构建，还能部署到服务器。
+
+提供一个运行环境，完成构建，还能部署到服务器。
+
+这些行为都可以在项目根目录的 .travis.yml 配置文件里面指定。
 
 
 ![Travis CI](../assets/images/travis.png)
 
-
-Travis 要求项目的根目录下面，必须有一个.travis.yml文件。
-
-这是配置文件，指定了 Travis 的行为。
 
 一般有下面几个阶段：
 
@@ -161,12 +200,12 @@ Travis 要求项目的根目录下面，必须有一个.travis.yml文件。
 GitHub 把这些操作就称为 actions。
 
 
-GitHub 提供了[官方市场](https://github.com/marketplace?type=actions)，允许开发者把每个操作写成独立的脚本文件，存放到代码仓库，使得其他开发者可以引用。
+在这个仓库的 .github/workflows 目录，生成一个 workflow 的 yml 文件，即可以使用 Github Actions。
 
 整个持续集成过程，就变成了一个 actions 的组合。
 
 
-使用 Github Actions 在这个仓库的 .github/workflows 目录，生成一个 workflow 文件，也是 `yaml` 语法。
+GitHub 还提供了[官方市场](https://github.com/marketplace?type=actions)，允许开发者把每个操作写成独立的脚本文件，存放到代码仓库，使得其他开发者可以引用。
 
 
 GitHub Actions 有一些自己的术语。
@@ -186,15 +225,102 @@ GitHub Actions 有一些自己的术语。
 ![action-log](../assets/images/action-log.png)
 
 
+
 ## Jenkins
+
+
+Jenkins 是一个基于 Java 开发的持续集成工具，用于监控持续重复的工作。
+
+旨在提供一个开放易用的软件平台，使软件的持续集成变成可能。
+
+
+通常与版本管理工具(SCM)、构建工具结合使用。
+
+常用的版本控制工具有 SVN、GIT，构建工具有Maven、Ant、Gradle。
+
+依托于 Jenkins 的平台，可以使用各种插件和脚本来实现自动化的构建、部署流程。
 
 
 
 ## Jenkins 流水线（pipeline）
 
+
 Pipeline，简而言之，就是一套运行于Jenkins上的工作流框架。
 
 将原本独立运行于单个或者多个节点的任务连接起来，实现单个任务难以完成的复杂流程编排与可视化。
+
+Pipeline 允许编写更加灵活的脚本，去控制整个工作流程。
+
+
+Jenkins pipeline 有两种语法：
+
+1. Declarative 声明式（偏配置化）
+
+2. Scripted Pipeline 脚本式（基于 Groovy 语言）
+
+
+声明式：
+
+```
+#!/usr/bin/env groovy
+
+pipeline {
+    //  声明参数 
+    parameters {
+        string(name:'dev_server', defaultValue: 'IP,Port,Name,Passwd', description: '开发服务器(IP,Port,Name,Passwd)')
+        string(name:'alT19_server', defaultValue: 'IP,Port,Name,Passwd', description: ' 生产服务器(IP,Port,Name,Passwd)')
+    }
+    environment {
+        TEST_EMAIL='Tester'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                // 拉取代码
+            }
+        }
+        stage('构建') {
+            steps {
+                sh "mvn -Dmaven.test.failure.ignore clean install"
+            }
+        }
+        stage('部署到测试环境') {
+            steps {
+                echo 'Deploying to test_server'
+            }
+        }
+        stage('部署生产环境') {
+            steps {
+                echo 'Deploying to prod_server'
+            }
+        }
+    }   
+}
+```
+
+
+stage 是每个 pipeline 阶段，steps 则是对 stage 的描述，而 script 则是一些 Groovy 的逻辑脚本。
+
+![stage](../assets/images/stage.png)
+
+
+脚本式：
+
+```
+node {
+    stage('Example') {
+        if (env.BRANCH_NAME == 'master') {
+            echo 'I only execute on the master branch'
+        } else {
+            echo 'I execute elsewhere'
+        }
+    }
+}
+```
+
+
+我们项目中的：
 
 ![jenkins_pipeline](../assets/images/jenkins.png)
 
